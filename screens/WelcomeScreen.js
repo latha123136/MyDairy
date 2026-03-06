@@ -1,107 +1,158 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { APP_INFO } from '../utils/constants';
 
 export default function WelcomeScreen({ navigation }) {
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
+    <LinearGradient colors={['#667eea', '#764ba2', '#f093fb']} style={styles.container}>
+      <View style={styles.heroSection}>
+        <Text style={styles.emoji}>📔</Text>
         <Text style={styles.title}>{APP_INFO.appName}</Text>
-        <Text style={styles.college}>{APP_INFO.collegeName}</Text>
-        
-        <View style={styles.teamContainer}>
-          <Text style={styles.teamTitle}>Team Members:</Text>
-          {APP_INFO.teamMembers.map((member, index) => (
-            <Text key={index} style={styles.teamMember}>• {member}</Text>
-          ))}
+        <Text style={styles.subtitle}>Your personal space for thoughts and memories</Text>
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.infoSection}>
+          <Text style={styles.college}>{APP_INFO.collegeName}</Text>
+          <View style={styles.divider} />
+          <Text style={styles.teamTitle}>Created by</Text>
+          <View style={styles.teamGrid}>
+            {APP_INFO.teamMembers.map((member, index) => (
+              <View key={index} style={styles.teamBadge}>
+                <Text style={styles.teamMember}>{member}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity 
-          style={styles.button}
+          style={styles.buttonPrimary}
           onPress={() => navigation.navigate('Login')}
+          activeOpacity={0.8}
         >
-          <Text style={styles.buttonText}>Login</Text>
+          <LinearGradient colors={['#667eea', '#764ba2']} style={styles.gradientButton}>
+            <Text style={styles.buttonText}>Login</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.button, styles.buttonSecondary]}
+          style={styles.buttonSecondary}
           onPress={() => navigation.navigate('Signup')}
+          activeOpacity={0.8}
         >
           <Text style={styles.buttonTextSecondary}>Sign Up</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
   },
-  content: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  emoji: {
+    fontSize: 72,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#fff',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  infoSection: {
+    marginBottom: 32,
   },
   college: {
     fontSize: 18,
-    color: '#7f8c8d',
+    fontWeight: '700',
+    color: '#667eea',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 16,
   },
-  teamContainer: {
-    marginBottom: 40,
-    backgroundColor: '#ecf0f1',
-    padding: 20,
-    borderRadius: 10,
+  divider: {
+    height: 1,
+    backgroundColor: '#e0e7ff',
+    marginBottom: 16,
   },
   teamTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#34495e',
-    marginBottom: 10,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  teamGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  teamBadge: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
   teamMember: {
-    fontSize: 14,
-    color: '#555',
-    marginVertical: 3,
+    fontSize: 13,
+    color: '#4b5563',
+    fontWeight: '500',
   },
-  button: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 8,
+  buttonPrimary: {
+    borderRadius: 16,
+    marginBottom: 12,
+    overflow: 'hidden',
   },
-  buttonSecondary: {
-    backgroundColor: 'white',
-    borderWidth: 2,
-    borderColor: '#3498db',
+  gradientButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  buttonSecondary: {
+    backgroundColor: '#f9fafb',
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#667eea',
   },
   buttonTextSecondary: {
-    color: '#3498db',
+    color: '#667eea',
     textAlign: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });

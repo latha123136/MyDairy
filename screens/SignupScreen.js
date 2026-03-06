@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SignupScreen({ navigation }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [focusedField, setFocusedField] = useState(null);
 
   const validatePassword = (pwd) => {
     const minLength = pwd.length >= 8;
@@ -40,106 +42,184 @@ export default function SignupScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Sign Up</Text>
-        
-        <Text style={styles.label}>Name</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter your name"
-        />
+    <LinearGradient colors={['#f9fafb', '#e0e7ff']} style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.emoji}>✨</Text>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Start your journaling journey today</Text>
+          </View>
+          
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>👤 Name</Text>
+              <TextInput
+                style={[styles.input, focusedField === 'name' && styles.inputFocused]}
+                value={name}
+                onChangeText={setName}
+                placeholder="Enter your name"
+                placeholderTextColor="#9ca3af"
+                onFocus={() => setFocusedField('name')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
 
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>📧 Email</Text>
+              <TextInput
+                style={[styles.input, focusedField === 'email' && styles.inputFocused]}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Enter your email"
+                placeholderTextColor="#9ca3af"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
 
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          secureTextEntry
-        />
-        <Text style={styles.hint}>
-          • Minimum 8 characters{'\n'}
-          • One uppercase letter{'\n'}
-          • One special symbol
-        </Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>🔒 Password</Text>
+              <TextInput
+                style={[styles.input, focusedField === 'password' && styles.inputFocused]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                placeholderTextColor="#9ca3af"
+                secureTextEntry
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
+              />
+              <View style={styles.hintBox}>
+                <Text style={styles.hint}>• Minimum 8 characters</Text>
+                <Text style={styles.hint}>• One uppercase letter</Text>
+                <Text style={styles.hint}>• One special symbol</Text>
+              </View>
+            </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleSignup}>
-          <Text style={styles.buttonText}>Sign Up</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={handleSignup} activeOpacity={0.8}>
+              <LinearGradient colors={['#667eea', '#764ba2']} style={styles.gradientButton}>
+                <Text style={styles.buttonText}>Sign Up</Text>
+              </LinearGradient>
+            </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.link}>Already have an account? Login</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.link}>Login</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
+    paddingTop: 60,
   },
   content: {
-    padding: 20,
-    paddingTop: 60,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  emoji: {
+    fontSize: 56,
+    marginBottom: 16,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 30,
+    fontWeight: '800',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#6b7280',
+  },
+  form: {
+    gap: 4,
+  },
+  inputContainer: {
+    marginBottom: 20,
   },
   label: {
-    fontSize: 16,
-    color: '#34495e',
+    fontSize: 15,
+    color: '#374151',
     marginBottom: 8,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    backgroundColor: '#f9fafb',
+    padding: 16,
+    borderRadius: 12,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    color: '#1f2937',
+  },
+  inputFocused: {
+    borderColor: '#667eea',
+    backgroundColor: '#fff',
+  },
+  hintBox: {
+    backgroundColor: '#f0f4ff',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
   },
   hint: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    marginBottom: 20,
-    marginTop: -10,
+    fontSize: 13,
+    color: '#6366f1',
+    marginVertical: 2,
   },
   button: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  gradientButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 15,
+    color: '#6b7280',
   },
   link: {
-    color: '#3498db',
-    textAlign: 'center',
-    marginTop: 15,
-    fontSize: 14,
+    color: '#667eea',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

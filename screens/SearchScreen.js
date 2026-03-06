@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Modal } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CATEGORIES } from '../utils/constants';
+import { getEntries, searchEntries } from '../utils/api';
 
 export default function SearchScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,26 +22,23 @@ export default function SearchScreen({ navigation }) {
 
   const loadEntries = async () => {
     try {
-      const data = await AsyncStorage.getItem('allEntries');
-      if (data) {
-        const entries = JSON.parse(data);
-        setAllEntries(entries);
-        setFilteredEntries(entries);
-      }
+      const entries = await getEntries();
+      setAllEntries(entries);
+      setFilteredEntries(entries);
     } catch (error) {
       console.error(error);
     }
   };
 
-  const filterEntries = () => {
+  const filterEntries = async () => {
     let filtered = [...allEntries];
 
     if (searchMode === 'text' && searchQuery.trim()) {
-      filtered = filtered.filter(entry => 
-        entry.entry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.mood?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      try {
+        filtered = await searchEntries(searchQuery);
+      } catch (error) {
+        console.error(error);
+      }
     } else if (searchMode === 'date') {
       const dateStr = selectedDate.toDateString();
       filtered = filtered.filter(entry => 
@@ -178,7 +175,7 @@ export default function SearchScreen({ navigation }) {
       <FlatList
         data={filteredEntries}
         renderItem={renderEntry}
-        keyExtractor={(item) => item.key}
+        keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

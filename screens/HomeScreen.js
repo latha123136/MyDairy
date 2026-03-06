@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Image, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
@@ -114,234 +115,286 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Today's Diary</Text>
-        <Text style={styles.headerSubtitle}>{new Date().toDateString()}</Text>
-      </View>
+    <View style={styles.container}>
+      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.header}>
+        <Text style={styles.headerTitle}>📖 MANOPATRA</Text>
+        <Text style={styles.headerDate}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+      </LinearGradient>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.infoText}>{APP_INFO.collegeName}</Text>
-        <Text style={styles.teamText}>Team: {APP_INFO.teamMembers.join(', ')}</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>How are you feeling?</Text>
-        <View style={styles.moodContainer}>
-          {MOODS.map((m) => (
-            <TouchableOpacity
-              key={m.label}
-              style={[styles.moodButton, mood === m.label && styles.moodButtonActive]}
-              onPress={() => setMood(m.label)}
-            >
-              <Text style={styles.moodEmoji}>{m.emoji}</Text>
-              <Text style={styles.moodLabel}>{m.label}</Text>
-            </TouchableOpacity>
-          ))}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>"Your Life, Your Story, Your Memories"</Text>
+          {/* <Text style={styles.infoTeam}>{APP_INFO.teamMembers.join(' • ')}</Text> */}
         </View>
 
-        <Text style={styles.label}>Category</Text>
-        <View style={styles.categoryContainer}>
-          {CATEGORIES.map((c) => (
-            <TouchableOpacity
-              key={c}
-              style={[styles.categoryButton, category === c && styles.categoryButtonActive]}
-              onPress={() => setCategory(c)}
-            >
-              <Text style={[styles.categoryText, category === c && styles.categoryTextActive]}>
-                {c}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>How are you feeling?</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.moodScroll}>
+            {MOODS.map((m) => (
+              <TouchableOpacity
+                key={m.label}
+                style={[styles.moodButton, mood === m.label && styles.moodButtonActive]}
+                onPress={() => setMood(m.label)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.moodEmoji}>{m.emoji}</Text>
+                <Text style={[styles.moodLabel, mood === m.label && styles.moodLabelActive]}>{m.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
-        <Text style={styles.label}>Write your thoughts...</Text>
-        <TextInput
-          style={styles.textArea}
-          value={entry}
-          onChangeText={setEntry}
-          placeholder="What happened today?"
-          multiline
-          numberOfLines={10}
-          textAlignVertical="top"
-        />
-
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
-            <Text style={styles.iconText}>📷 Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.iconButton} 
-            onPress={recording ? stopRecording : startRecording}
-          >
-            <Text style={styles.iconText}>{recording ? '⏹️ Stop' : '🎤 Voice'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {photos.length > 0 && (
-          <View style={styles.photoContainer}>
-            {photos.map((uri, index) => (
-              <Image key={index} source={{ uri }} style={styles.photo} />
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Category</Text>
+          <View style={styles.categoryContainer}>
+            {CATEGORIES.map((c) => (
+              <TouchableOpacity
+                key={c}
+                style={[styles.categoryChip, category === c && styles.categoryChipActive]}
+                onPress={() => setCategory(c)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.categoryText, category === c && styles.categoryTextActive]}>
+                  {c}
+                </Text>
+              </TouchableOpacity>
             ))}
           </View>
-        )}
+        </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>
-            {isEditing ? '✏️ Update Entry' : '💾 Save Entry'}
-          </Text>
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Write your thoughts...</Text>
+          <TextInput
+            style={styles.textArea}
+            value={entry}
+            onChangeText={setEntry}
+            placeholder="What's on your mind today?"
+            placeholderTextColor="#9ca3af"
+            multiline
+            numberOfLines={12}
+            textAlignVertical="top"
+          />
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.iconButton} onPress={pickImage} activeOpacity={0.7}>
+              <Text style={styles.iconEmoji}>📷</Text>
+              <Text style={styles.iconLabel}>Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.iconButton, recording && styles.iconButtonActive]} 
+              onPress={recording ? stopRecording : startRecording}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.iconEmoji}>{recording ? '⏹️' : '🎤'}</Text>
+              <Text style={styles.iconLabel}>{recording ? 'Stop' : 'Voice'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {photos.length > 0 && (
+            <View style={styles.photoContainer}>
+              <Text style={styles.photoTitle}>Attached Photos ({photos.length})</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {photos.map((uri, index) => (
+                  <Image key={index} source={{ uri }} style={styles.photo} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
+          <LinearGradient colors={['#10b981', '#059669']} style={styles.gradientButton}>
+            <Text style={styles.saveButtonText}>
+              {isEditing ? '✏️ Update Entry' : '💾 Save Entry'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f3f4f6',
   },
   header: {
-    backgroundColor: '#3498db',
-    padding: 20,
-    paddingTop: 50,
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 4,
   },
-  headerSubtitle: {
+  headerDate: {
     fontSize: 14,
-    color: 'white',
-    marginTop: 5,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
+  },
+  scrollView: {
+    flex: 1,
   },
   infoCard: {
-    backgroundColor: '#ecf0f1',
-    margin: 15,
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#667eea',
   },
-  infoText: {
+  infoTitle: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 4,
   },
-  teamText: {
+  infoTeam: {
     fontSize: 12,
-    color: '#7f8c8d',
-    marginTop: 5,
+    color: '#6b7280',
   },
   card: {
-    backgroundColor: 'white',
-    margin: 15,
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginTop: 16,
     padding: 20,
-    borderRadius: 15,
+    borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     elevation: 3,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 10,
-    marginTop: 10,
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 16,
   },
-  moodContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 15,
+  moodScroll: {
+    marginHorizontal: -4,
   },
   moodButton: {
-    padding: 10,
-    margin: 5,
-    borderRadius: 20,
-    backgroundColor: '#ecf0f1',
     alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 4,
+    borderRadius: 16,
+    backgroundColor: '#f3f4f6',
     minWidth: 80,
   },
   moodButtonActive: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#e0e7ff',
   },
   moodEmoji: {
-    fontSize: 24,
+    fontSize: 32,
+    marginBottom: 6,
   },
   moodLabel: {
-    fontSize: 12,
-    marginTop: 4,
-    color: '#2c3e50',
+    fontSize: 13,
+    color: '#6b7280',
+    fontWeight: '600',
+  },
+  moodLabelActive: {
+    color: '#667eea',
   },
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 15,
+    gap: 8,
   },
-  categoryButton: {
-    padding: 10,
-    margin: 5,
+  categoryChip: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#ecf0f1',
+    backgroundColor: '#f3f4f6',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  categoryButtonActive: {
-    backgroundColor: '#3498db',
+  categoryChipActive: {
+    backgroundColor: '#e0e7ff',
+    borderColor: '#667eea',
   },
   categoryText: {
     fontSize: 14,
-    color: '#2c3e50',
+    color: '#6b7280',
+    fontWeight: '600',
   },
   categoryTextActive: {
-    color: 'white',
+    color: '#667eea',
   },
   textArea: {
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: '#f9fafb',
+    padding: 16,
+    borderRadius: 12,
     fontSize: 16,
-    minHeight: 150,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    minHeight: 200,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    color: '#1f2937',
+    lineHeight: 24,
   },
   actionRow: {
     flexDirection: 'row',
-    marginTop: 15,
-    justifyContent: 'space-around',
+    marginTop: 16,
+    gap: 12,
   },
   iconButton: {
-    backgroundColor: '#ecf0f1',
-    padding: 12,
-    borderRadius: 10,
     flex: 1,
-    margin: 5,
+    backgroundColor: '#f3f4f6',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
-  iconText: {
-    textAlign: 'center',
-    fontSize: 14,
+  iconButtonActive: {
+    backgroundColor: '#fee2e2',
+  },
+  iconEmoji: {
+    fontSize: 20,
+  },
+  iconLabel: {
+    fontSize: 15,
     fontWeight: '600',
+    color: '#374151',
   },
   photoContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 15,
+    marginTop: 16,
+  },
+  photoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 12,
   },
   photo: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    margin: 5,
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    marginRight: 12,
   },
   saveButton: {
-    backgroundColor: '#27ae60',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20,
+    marginHorizontal: 16,
+    marginTop: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  gradientButton: {
+    paddingVertical: 18,
+    alignItems: 'center',
   },
   saveButtonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });

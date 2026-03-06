@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ForgotPasswordScreen({ navigation }) {
   const [email, setEmail] = useState('');
+  const [focusedField, setFocusedField] = useState(null);
 
   const handleResetPassword = () => {
     if (!email) {
@@ -15,94 +17,131 @@ export default function ForgotPasswordScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={['#f9fafb', '#e0e7ff']} style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Forgot Password</Text>
-        <Text style={styles.description}>
-          Enter your email address and we'll send you a link to reset your password.
-        </Text>
+        <View style={styles.header}>
+          <Text style={styles.emoji}>🔐</Text>
+          <Text style={styles.title}>Forgot Password</Text>
+          <Text style={styles.subtitle}>
+            Enter your email and we'll send you a reset link
+          </Text>
+        </View>
         
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+        <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>📧 Email</Text>
+            <TextInput
+              style={[styles.input, focusedField === 'email' && styles.inputFocused]}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter your email"
+              placeholderTextColor="#9ca3af"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              onFocus={() => setFocusedField('email')}
+              onBlur={() => setFocusedField(null)}
+            />
+          </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
-          <Text style={styles.buttonText}>Send Reset Link</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={handleResetPassword} activeOpacity={0.8}>
+            <LinearGradient colors={['#667eea', '#764ba2']} style={styles.gradientButton}>
+              <Text style={styles.buttonText}>Send Reset Link</Text>
+            </LinearGradient>
+          </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.link}>Back to Login</Text>
-        </TouchableOpacity>
+          <View style={styles.footer}>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.link}>← Back to Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
   },
   content: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  emoji: {
+    fontSize: 56,
+    marginBottom: 16,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 15,
+    fontWeight: '800',
+    color: '#1f2937',
+    marginBottom: 12,
   },
-  description: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 30,
+  subtitle: {
+    fontSize: 15,
+    color: '#6b7280',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  form: {
+    gap: 4,
+  },
+  inputContainer: {
+    marginBottom: 24,
   },
   label: {
-    fontSize: 16,
-    color: '#34495e',
+    fontSize: 15,
+    color: '#374151',
     marginBottom: 8,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
+    backgroundColor: '#f9fafb',
+    padding: 16,
+    borderRadius: 12,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    color: '#1f2937',
+  },
+  inputFocused: {
+    borderColor: '#667eea',
+    backgroundColor: '#fff',
   },
   button: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  gradientButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  footer: {
+    alignItems: 'center',
   },
   link: {
-    color: '#3498db',
-    textAlign: 'center',
-    marginTop: 15,
-    fontSize: 14,
+    color: '#667eea',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
