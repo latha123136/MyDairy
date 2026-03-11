@@ -5,10 +5,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useNavigation } from '@react-navigation/native';
 import { getCurrentUser } from '../services/authService';
+import { getUserProfile } from '../services/profileService';
 import { APP_INFO, CATEGORIES, MOODS } from '../utils/constants';
 
 export default function HomeScreen() {
+  const navigation = useNavigation();
   const [entry, setEntry] = useState('');
   const [mood, setMood] = useState('');
   const [category, setCategory] = useState('');
@@ -23,13 +26,24 @@ export default function HomeScreen() {
   const [sound, setSound] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     const user = getCurrentUser();
     if (user) {
       setCurrentUserId(user.uid);
+      loadUserProfile(user.uid);
     }
   }, []);
+
+  const loadUserProfile = async (userId) => {
+    try {
+      const profile = await getUserProfile(userId);
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
 
   useEffect(() => {
     loadEntryForDate(selectedDate);
@@ -216,8 +230,24 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#667eea', '#764ba2']} style={styles.header}>
-        <Text style={styles.headerTitle}>📖 MANOPATRA</Text>
-        <Text style={styles.headerDate}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>📖 MANOPATRA</Text>
+          <Text style={styles.headerDate}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.profileButton} 
+          onPress={() => {
+            console.log('Navigating to Profile...');
+            navigation.navigate('Profile');
+          }}
+          activeOpacity={0.7}
+        >
+          {userProfile?.photoURL ? (
+            <Image source={{ uri: userProfile.photoURL }} style={styles.profileImage} />
+          ) : (
+            <Text style={styles.profileIcon}>👤</Text>
+          )}
+        </TouchableOpacity>
       </LinearGradient>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -422,6 +452,12 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 24,
     paddingHorizontal: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: 28,
@@ -433,6 +469,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
     fontWeight: '500',
+  },
+  profileButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  profileIcon: {
+    fontSize: 24,
   },
   scrollView: {
     flex: 1,

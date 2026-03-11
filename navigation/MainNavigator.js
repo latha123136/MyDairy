@@ -8,9 +8,19 @@ import StatisticsScreen from '../screens/StatisticsScreen';
 import MoodTrackerScreen from '../screens/MoodTrackerScreen';
 import MemoryTimelineScreen from '../screens/MemoryTimelineScreen';
 import EntryDetailScreen from '../screens/EntryDetailScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
+function HomeStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HomeMain" component={HomeScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+    </Stack.Navigator>
+  );
+}
 
 function SearchStack() {
   return (
@@ -63,15 +73,11 @@ export default function MainNavigator({ onLogout }) {
     >
       <Tab.Screen 
         name="Home" 
-        component={HomeScreen}
+        component={HomeStack}
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🏠</Text>,
-          headerRight: () => (
-            <TouchableOpacity onPress={handleLogout} style={{ marginRight: 15 }}>
-              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>Logout</Text>
-            </TouchableOpacity>
-          ),
+          headerShown: false,
         }}
       />
       <Tab.Screen 
