@@ -9,7 +9,7 @@ export default function WelcomeScreen({ navigation }) {
       <View style={styles.heroSection}>
         <Text style={styles.emoji}>📔</Text>
         <Text style={styles.title}>{APP_INFO.appName}</Text>
-        <Text style={styles.subtitle}>Your personal space for thoughts and memories</Text>
+        <Text style={styles.subtitle}> Your personal space for thoughts and memories  </Text>
       </View>
 
       <View style={styles.card}>

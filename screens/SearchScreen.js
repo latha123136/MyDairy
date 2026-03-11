@@ -1,61 +1,78 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Modal } from 'react-native';
-import { CATEGORIES } from '../utils/constants';
-import { getEntries, searchEntries } from '../utils/api';
+import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { getCurrentUser } from '../services/authService';
+import { CATEGORIES, MOODS } from '../utils/constants';
 
 export default function SearchScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [allEntries, setAllEntries] = useState([]);
   const [filteredEntries, setFilteredEntries] = useState([]);
-  const [searchMode, setSearchMode] = useState('text'); // text, date, month, category
+  const [searchMode, setSearchMode] = useState('text');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedMood, setSelectedMood] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
-    loadEntries();
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUserId(user.uid);
+    }
   }, []);
 
   useEffect(() => {
+    loadEntries();
+  }, [currentUserId]);
+
+  const handleSearch = () => {
     filterEntries();
-  }, [searchQuery, allEntries, searchMode, selectedCategory, selectedDate]);
+  };
 
   const loadEntries = async () => {
+    if (!currentUserId) return;
     try {
-      const entries = await getEntries();
-      setAllEntries(entries);
-      setFilteredEntries(entries);
+      const userEntriesKey = `allEntries_${currentUserId}`;
+      const data = await AsyncStorage.getItem(userEntriesKey);
+      if (data) {
+        const entries = JSON.parse(data);
+        setAllEntries(entries);
+        setFilteredEntries(entries);
+      }
     } catch (error) {
       console.error(error);
     }
   };
 
-  const filterEntries = async () => {
+  const filterEntries = () => {
     let filtered = [...allEntries];
 
     if (searchMode === 'text' && searchQuery.trim()) {
-      try {
-        filtered = await searchEntries(searchQuery);
-      } catch (error) {
-        console.error(error);
-      }
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(entry => 
+        entry.entry.toLowerCase().includes(query) ||
+        entry.category?.toLowerCase().includes(query) ||
+        entry.mood?.toLowerCase().includes(query)
+      );
     } else if (searchMode === 'date') {
       const dateStr = selectedDate.toDateString();
       filtered = filtered.filter(entry => 
         new Date(entry.date).toDateString() === dateStr
       );
-    } else if (searchMode === 'month') {
-      const month = selectedDate.getMonth();
-      const year = selectedDate.getFullYear();
-      filtered = filtered.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate.getMonth() === month && entryDate.getFullYear() === year;
-      });
-    } else if (searchMode === 'category' && selectedCategory) {
-      filtered = filtered.filter(entry => entry.category === selectedCategory);
+    } else if (searchMode === 'category' && selectedMood) {
+      filtered = filtered.filter(entry => entry.mood === selectedMood);
     }
 
     setFilteredEntries(filtered);
+  };
+
+  const handleDateChange = (event, date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (date) {
+      setSelectedDate(date);
+    }
   };
 
   const renderEntry = ({ item }) => (
@@ -65,9 +82,13 @@ export default function SearchScreen({ navigation }) {
     >
       <View style={styles.entryHeader}>
         <Text style={styles.entryDate}>
-          {new Date(item.date).toLocaleDateString()}
+          {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </Text>
-        {item.mood && <Text style={styles.entryMood}>{item.mood}</Text>}
+        {item.mood && (
+          <Text style={styles.entryMood}>
+            {MOODS.find(m => m.label === item.mood)?.emoji || '😊'}
+          </Text>
+        )}
       </View>
       {item.category && (
         <View style={styles.categoryBadge}>
@@ -80,39 +101,10 @@ export default function SearchScreen({ navigation }) {
     </TouchableOpacity>
   );
 
-  const renderDateSelector = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const currentMonth = selectedDate.getMonth();
-    const currentYear = selectedDate.getFullYear();
-
-    return (
-      <View style={styles.dateSelector}>
-        <TouchableOpacity 
-          style={styles.dateButton}
-          onPress={() => setSelectedDate(new Date(currentYear, currentMonth - 1, 1))}
-        >
-          <Text style={styles.dateButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.dateText}>
-          {searchMode === 'date' 
-            ? selectedDate.toDateString()
-            : `${months[currentMonth]} ${currentYear}`
-          }
-        </Text>
-        <TouchableOpacity 
-          style={styles.dateButton}
-          onPress={() => setSelectedDate(new Date(currentYear, currentMonth + 1, 1))}
-        >
-          <Text style={styles.dateButtonText}>→</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Search Diary</Text>
+        <Text style={styles.headerTitle}>🔍 Search Diary</Text>
       </View>
 
       <View style={styles.searchModeContainer}>
@@ -129,16 +121,10 @@ export default function SearchScreen({ navigation }) {
           <Text style={[styles.modeText, searchMode === 'date' && styles.modeTextActive]}>Date</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.modeButton, searchMode === 'month' && styles.modeButtonActive]}
-          onPress={() => setSearchMode('month')}
-        >
-          <Text style={[styles.modeText, searchMode === 'month' && styles.modeTextActive]}>Month</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
           style={[styles.modeButton, searchMode === 'category' && styles.modeButtonActive]}
           onPress={() => setSearchMode('category')}
         >
-          <Text style={[styles.modeText, searchMode === 'category' && styles.modeTextActive]}>Category</Text>
+          <Text style={[styles.modeText, searchMode === 'category' && styles.modeTextActive]}>Moment</Text>
         </TouchableOpacity>
       </View>
 
@@ -147,40 +133,87 @@ export default function SearchScreen({ navigation }) {
           <TextInput
             style={styles.searchInput}
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (text.trim()) {
+                const query = text.toLowerCase();
+                const filtered = allEntries.filter(entry => 
+                  entry.entry.toLowerCase().includes(query) ||
+                  entry.category?.toLowerCase().includes(query) ||
+                  entry.mood?.toLowerCase().includes(query)
+                );
+                setFilteredEntries(filtered);
+              } else {
+                setFilteredEntries(allEntries);
+              }
+            }}
             placeholder="Search by text, category, or mood..."
             placeholderTextColor="#999"
           />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Text style={styles.searchButtonText}>🔍 Search</Text>
+          </TouchableOpacity>
         </View>
       )}
 
-      {(searchMode === 'date' || searchMode === 'month') && renderDateSelector()}
+      {searchMode === 'date' && (
+        <View style={styles.datePickerContainer}>
+          <TouchableOpacity 
+            style={styles.datePickerButton}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.dateEmoji}>📅</Text>
+            <Text style={styles.datePickerText}>
+              {selectedDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Text style={styles.searchButtonText}>🔍 Search</Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+            />
+          )}
+        </View>
+      )}
 
       {searchMode === 'category' && (
-        <View style={styles.categoryFilterContainer}>
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.categoryFilterButton, selectedCategory === cat && styles.categoryFilterButtonActive]}
-              onPress={() => setSelectedCategory(cat)}
-            >
-              <Text style={[styles.categoryFilterText, selectedCategory === cat && styles.categoryFilterTextActive]}>
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.moodFilterContainer}>
+          <Text style={styles.filterTitle}>Select Moment:</Text>
+          <View style={styles.moodGrid}>
+            {MOODS.map((mood) => (
+              <TouchableOpacity
+                key={mood.label}
+                style={[styles.moodFilterButton, selectedMood === mood.label && styles.moodFilterButtonActive]}
+                onPress={() => setSelectedMood(mood.label)}
+              >
+                <Text style={styles.moodFilterEmoji}>{mood.emoji}</Text>
+                <Text style={[styles.moodFilterText, selectedMood === mood.label && styles.moodFilterTextActive]}>
+                  {mood.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Text style={styles.searchButtonText}>🔍 Search</Text>
+          </TouchableOpacity>
         </View>
       )}
 
       <FlatList
         data={filteredEntries}
         renderItem={renderEntry}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {searchQuery || selectedCategory ? 'No entries found' : 'No diary entries yet'}
+              {searchQuery || selectedMood ? 'No entries found' : 'No diary entries yet'}
             </Text>
           </View>
         }
@@ -192,16 +225,16 @@ export default function SearchScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f3f4f6',
   },
   header: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#667eea',
     padding: 20,
     paddingTop: 50,
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: 'white',
   },
   searchModeContainer: {
@@ -209,22 +242,22 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#e5e7eb',
   },
   modeButton: {
     flex: 1,
-    padding: 10,
+    padding: 12,
     margin: 5,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    backgroundColor: '#f3f4f6',
     alignItems: 'center',
   },
   modeButtonActive: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#667eea',
   },
   modeText: {
     fontSize: 14,
-    color: '#2c3e50',
+    color: '#374151',
     fontWeight: '600',
   },
   modeTextActive: {
@@ -232,77 +265,105 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     padding: 15,
+    backgroundColor: 'white',
   },
   searchInput: {
-    backgroundColor: 'white',
+    backgroundColor: '#f9fafb',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    marginBottom: 10,
   },
-  dateSelector: {
+  searchButton: {
+    backgroundColor: '#667eea',
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  searchButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  datePickerContainer: {
+    padding: 15,
+    backgroundColor: 'white',
+  },
+  datePickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 15,
-    backgroundColor: 'white',
-    marginHorizontal: 15,
-    marginVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    backgroundColor: '#f3f4f6',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#667eea',
   },
-  dateButton: {
-    padding: 10,
-    backgroundColor: '#3498db',
-    borderRadius: 8,
+  dateEmoji: {
+    fontSize: 24,
+    marginRight: 12,
   },
-  dateButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  dateText: {
+  datePickerText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2c3e50',
+    color: '#1f2937',
   },
-  categoryFilterContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 10,
+  moodFilterContainer: {
+    padding: 15,
     backgroundColor: 'white',
   },
-  categoryFilterButton: {
-    padding: 10,
+  filterTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  moodGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  moodFilterButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
+    minWidth: 100,
     margin: 5,
-    borderRadius: 20,
-    backgroundColor: '#ecf0f1',
   },
-  categoryFilterButtonActive: {
-    backgroundColor: '#3498db',
+  moodFilterButtonActive: {
+    backgroundColor: '#e0e7ff',
+    borderWidth: 2,
+    borderColor: '#667eea',
   },
-  categoryFilterText: {
-    fontSize: 14,
-    color: '#2c3e50',
+  moodFilterEmoji: {
+    fontSize: 28,
+    marginBottom: 4,
   },
-  categoryFilterTextActive: {
-    color: 'white',
+  moodFilterText: {
+    fontSize: 13,
+    color: '#6b7280',
+    fontWeight: '600',
+  },
+  moodFilterTextActive: {
+    color: '#667eea',
   },
   listContainer: {
     padding: 15,
   },
   entryCard: {
     backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: '#667eea',
   },
   entryHeader: {
     flexDirection: 'row',
@@ -311,29 +372,29 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   entryDate: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    fontWeight: '600',
+    fontSize: 13,
+    color: '#667eea',
+    fontWeight: '700',
   },
   entryMood: {
-    fontSize: 16,
+    fontSize: 20,
   },
   categoryBadge: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#e0e7ff',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 15,
+    borderRadius: 8,
     alignSelf: 'flex-start',
     marginBottom: 10,
   },
   categoryBadgeText: {
-    color: 'white',
-    fontSize: 12,
+    color: '#667eea',
+    fontSize: 11,
     fontWeight: '600',
   },
   entryText: {
     fontSize: 14,
-    color: '#2c3e50',
+    color: '#374151',
     lineHeight: 20,
   },
   emptyContainer: {
@@ -343,6 +404,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#7f8c8d',
+    color: '#9ca3af',
   },
 });

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { signUp } from '../services/authService';
 
 export default function SignupScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -31,11 +31,14 @@ export default function SignupScreen({ navigation }) {
     }
 
     try {
-      const user = { name, email, password };
-      await AsyncStorage.setItem('user', JSON.stringify(user));
-      Alert.alert('Success', 'Account created successfully!', [
-        { text: 'OK', onPress: () => navigation.navigate('Login') }
-      ]);
+      const result = await signUp(email, password);
+      if (result.success) {
+        Alert.alert('Success', 'Account created successfully!', [
+          { text: 'OK', onPress: () => navigation.navigate('Login') }
+        ]);
+      } else {
+        Alert.alert('Error', result.error);
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to create account');
     }

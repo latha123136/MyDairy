@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { login } from '../services/authService';
 
 export default function LoginScreen({ navigation, onLogin }) {
   const [email, setEmail] = useState('');
@@ -15,17 +15,11 @@ export default function LoginScreen({ navigation, onLogin }) {
     }
 
     try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        if (user.email === email && user.password === password) {
-          await AsyncStorage.setItem('currentUser', JSON.stringify(user));
-          onLogin();
-        } else {
-          Alert.alert('Error', 'Invalid email or password');
-        }
+      const result = await login(email, password);
+      if (result.success) {
+        onLogin();
       } else {
-        Alert.alert('Error', 'No account found. Please sign up first.');
+        Alert.alert('Error', result.error);
       }
     } catch (error) {
       Alert.alert('Error', 'Login failed');

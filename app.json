@@ -40,7 +40,8 @@
         {
           "microphonePermission": "The app accesses your microphone to record voice notes for diary entries."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

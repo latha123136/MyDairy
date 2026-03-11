@@ -1,11 +1,10 @@
 export const APP_INFO = {
   appName: 'Personal Diary App',
-  collegeName: 'ABC College of Engineering',
+  collegeName: 'GSSS Institute of Engineering and Technology For Women,Mysuru',
   teamMembers: [
-    'John Doe',
-    'Jane Smith',
-    'Mike Johnson',
-    'Sarah Williams'
+    'Latha K',
+    'Mamatha C S',
+    'Chethana M K'
   ]
 };
 

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
+import * as ImagePicker from 'expo-image-picker';
 import { CATEGORIES, MOODS } from '../utils/constants';
 
 export default function EntryDetailScreen({ route, navigation }) {
@@ -9,6 +11,9 @@ export default function EntryDetailScreen({ route, navigation }) {
   const [mood, setMood] = useState(entry.mood);
   const [category, setCategory] = useState(entry.category);
   const [isEditing, setIsEditing] = useState(false);
+  const [voiceNotes, setVoiceNotes] = useState(entry.voiceNotes || []);
+  const [recording, setRecording] = useState(null);
+  const [sound, setSound] = useState(null);
 
   const handleUpdate = async () => {
     try {
@@ -17,16 +22,19 @@ export default function EntryDetailScreen({ route, navigation }) {
         entry: editedEntry,
         mood,
         category,
+        voiceNotes,
       };
 
       await AsyncStorage.setItem(entry.key, JSON.stringify(updatedEntry));
 
-      const allEntries = await AsyncStorage.getItem('allEntries');
+      const userId = entry.userId || entry.key.split('_')[1];
+      const userEntriesKey = `allEntries_${userId}`;
+      const allEntries = await AsyncStorage.getItem(userEntriesKey);
       const entries = JSON.parse(allEntries);
       const index = entries.findIndex(e => e.key === entry.key);
       if (index >= 0) {
         entries[index] = updatedEntry;
-        await AsyncStorage.setItem('allEntries', JSON.stringify(entries));
+        await AsyncStorage.setItem(userEntriesKey, JSON.stringify(entries));
       }
 
       Alert.alert('Success', 'Entry updated!');
@@ -35,6 +43,51 @@ export default function EntryDetailScreen({ route, navigation }) {
     } catch (error) {
       Alert.alert('Error', 'Failed to update entry');
     }
+  };
+
+  const startRecording = async () => {
+    try {
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to start recording');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    setVoiceNotes([...voiceNotes, uri]);
+    setRecording(null);
+    Alert.alert('Success', 'Voice note added!');
+  };
+
+  const playVoice = async (uri) => {
+    try {
+      if (sound) {
+        await sound.unloadAsync();
+      }
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
+      setSound(newSound);
+      await newSound.playAsync();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to play voice note');
+    }
+  };
+
+  const deleteVoice = (index) => {
+    Alert.alert('Delete Voice Note', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', onPress: () => setVoiceNotes(voiceNotes.filter((_, i) => i !== index)) }
+    ]);
   };
 
   return (
@@ -93,6 +146,31 @@ export default function EntryDetailScreen({ route, navigation }) {
               textAlignVertical="top"
             />
 
+            <Text style={styles.label}>Voice Notes</Text>
+            <TouchableOpacity 
+              style={[styles.voiceButton, recording && styles.voiceButtonActive]}
+              onPress={recording ? stopRecording : startRecording}
+            >
+              <Text style={styles.voiceButtonText}>
+                {recording ? '⏹️ Stop Recording' : '🎤 Add Voice Note'}
+              </Text>
+            </TouchableOpacity>
+
+            {voiceNotes.length > 0 && (
+              <View style={styles.voiceList}>
+                {voiceNotes.map((uri, index) => (
+                  <View key={index} style={styles.voiceItem}>
+                    <TouchableOpacity style={styles.playBtn} onPress={() => playVoice(uri)}>
+                      <Text style={styles.playBtnText}>▶️ Note {index + 1}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.deleteVoiceBtn} onPress={() => deleteVoice(index)}>
+                      <Text style={styles.deleteBtnText}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+
             <TouchableOpacity style={styles.saveButton} onPress={handleUpdate}>
               <Text style={styles.saveButtonText}>Save Changes</Text>
             </TouchableOpacity>
@@ -119,6 +197,17 @@ export default function EntryDetailScreen({ route, navigation }) {
               <View style={styles.photoContainer}>
                 {entry.photos.map((uri, index) => (
                   <Image key={index} source={{ uri }} style={styles.photo} />
+                ))}
+              </View>
+            )}
+
+            {voiceNotes.length > 0 && (
+              <View style={styles.voiceSection}>
+                <Text style={styles.label}>Voice Notes ({voiceNotes.length})</Text>
+                {voiceNotes.map((uri, index) => (
+                  <TouchableOpacity key={index} style={styles.voicePlayBtn} onPress={() => playVoice(uri)}>
+                    <Text style={styles.voicePlayText}>▶️ Play Note {index + 1}</Text>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}
@@ -289,5 +378,63 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  voiceButton: {
+    backgroundColor: '#667eea',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  voiceButtonActive: {
+    backgroundColor: '#ef4444',
+  },
+  voiceButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  voiceList: {
+    marginBottom: 15,
+  },
+  voiceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  playBtn: {
+    flex: 1,
+    backgroundColor: '#667eea',
+    padding: 8,
+    borderRadius: 6,
+  },
+  playBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  deleteVoiceBtn: {
+    marginLeft: 10,
+    padding: 8,
+  },
+  deleteBtnText: {
+    fontSize: 18,
+  },
+  voiceSection: {
+    marginTop: 15,
+  },
+  voicePlayBtn: {
+    backgroundColor: '#667eea',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  voicePlayText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

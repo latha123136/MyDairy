@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { onAuthChange } from './services/authService';
 import WelcomeScreen from './screens/WelcomeScreen';
 import SignupScreen from './screens/SignupScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -15,25 +15,15 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkLoginStatus();
+    const unsubscribe = onAuthChange((user) => {
+      setIsLoggedIn(!!user);
+      setLoading(false);
+    });
+    return unsubscribe;
   }, []);
 
-  const checkLoginStatus = async () => {
-    try {
-      const user = await AsyncStorage.getItem('user');
-      setIsLoggedIn(!!user);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLogin = () => setIsLoggedIn(true);
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('user');
-    setIsLoggedIn(false);
-  };
+  const handleLogout = () => setIsLoggedIn(false);
 
   if (loading) return null;
 
